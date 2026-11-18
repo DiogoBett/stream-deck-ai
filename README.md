@@ -1,5 +1,6 @@
 > [!CAUTION]
 > IN DEVELOPMENT - USE AT YOUR OWN RISK;
+>
 > V1 - SUPPORTS ONLY GITHUB COPILOT.
 
 ## stream-deck-ai
