@@ -80,37 +80,45 @@
 		</header>
 		<section class="card">
 			<p class="intro">Connect your personal account to track monthly Copilot usage.</p>
-			<p class="note">Use a fine-grained personal access token with the user <code>Plan: read</code> permission. The token is saved in this plugin's Stream Deck global settings on this computer. Free, Pro, Pro+, and Max Individual use the same metrics.</p>
+			<p class="note">Use a fine-grained personal access token with the user <code>Plan: read</code> permission. The token is saved in this plugin's Stream Deck global settings on this computer.</p>
 
-			<label for="username">GitHub username</label>
+			<label for="username">GitHub Username</label>
 			<input id="username" autocomplete="username">
-			<label for="pat">Personal access token</label>
+			<label for="pat">Personal Access Token</label>
 			<input id="pat" type="password" autocomplete="new-password">
 
-			<p class="note">GitHub's personal billing endpoints return usage totals, not plan allowances. This plugin displays usage only.</p>
-			<button id="save" type="button">Save settings</button>
+			<p class="note">GitHub's personal billing endpoints return usage totals.</p>
+			<button id="save" type="button">Save Settings</button>
 			<p id="status" class="note" role="status"></p>
 		</section>
 	</main>
 
 	<script>
 		let socket;
-		let actionContext;
+		let pluginContext;
+		let pendingSave;
 
-		function connectElgatoStreamDeckSocket(port, propertyInspectorUuid, registerEvent, info, actionInfo) {
-			actionContext = JSON.parse(actionInfo).context;
+		function connectElgatoStreamDeckSocket(port, propertyInspectorUuid, registerEvent, info) {
+			pluginContext = JSON.parse(info).plugin.uuid;
 			socket = new WebSocket(`ws://127.0.0.1:${port}`);
 			socket.addEventListener("open", () => {
 				socket.send(JSON.stringify({ event: registerEvent, uuid: propertyInspectorUuid }));
-				socket.send(JSON.stringify({ event: "getSettings", context: actionContext }));
-				socket.send(JSON.stringify({ event: "getGlobalSettings", context: actionContext }));
+				socket.send(JSON.stringify({ event: "getGlobalSettings", context: pluginContext }));
 			});
 			socket.addEventListener("message", (event) => {
 				const message = JSON.parse(event.data);
 				if (message.event === "didReceiveGlobalSettings") {
 					const settings = message.payload.settings || {};
-					document.getElementById("username").value = settings.username || "";
-					document.getElementById("pat").value = settings.pat || "";
+					if (pendingSave) {
+						const saved = settings.username === pendingSave.username && settings.pat === pendingSave.pat;
+						document.getElementById("status").textContent = saved
+							? "Settings saved. Usage keys are refreshing."
+							: "Could not verify saved settings. Please try again.";
+						pendingSave = undefined;
+					} else {
+						document.getElementById("username").value = settings.username || "";
+						document.getElementById("pat").value = settings.pat || "";
+					}
 				}
 			});
 		}
@@ -128,13 +136,19 @@
 				status.textContent = "Stream Deck is not connected yet. Try again.";
 				return;
 			}
+			if (!pluginContext) {
+				status.textContent = "Could not identify the plugin settings context. Reopen this inspector.";
+				return;
+			}
 
+			pendingSave = { username, pat };
+			status.textContent = "Saving Settings...";
 			socket.send(JSON.stringify({
 				event: "setGlobalSettings",
-				context: actionContext,
+				context: pluginContext,
 				payload: { username, pat }
 			}));
-			status.textContent = "Settings saved. Usage keys will refresh automatically.";
+			socket.send(JSON.stringify({ event: "getGlobalSettings", context: pluginContext }));
 		});
 	</script>
 </body>

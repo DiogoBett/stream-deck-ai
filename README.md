@@ -1,5 +1,6 @@
 > [!CAUTION]
-> IN DEVELOPMENT - USE AT YOUR OWN RISK.
+> IN DEVELOPMENT - USE AT YOUR OWN RISK;
+> V1 - SUPPORTS ONLY GITHUB COPILOT.
 
 ## stream-deck-ai
 A Stream Deck plugin for personal GitHub Copilot usage on Free, Pro, Pro+, and Max plans;
