@@ -1,0 +1,86 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "io.github.diogo.ai-usage",
+  "Name": "AI Usage",
+  "Version": "0.1.0.0",
+  "Author": "DiogoBett",
+  "Description": "Personal AI Usage Tracker.",
+  "Category": "AI Usage",
+  "CategoryIcon": "assets/category",
+  "Icon": "assets/plugin",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "Nodejs": {
+    "Version": "24"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    }
+  ],
+  "Actions": [
+    {
+      "Name": "Copilot AI Credits",
+      "UUID": "io.github.diogo.ai-usage.copilot-credits",
+      "Icon": "assets/copilot",
+      "Tooltip": "Shows this month's personal Copilot AI credit usage. Press to switch display; when setup is required, press to open GitHub token settings.",
+      "PropertyInspectorPath": "ui/copilot.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "assets/copilot",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "Name": "Copilot Premium Requests",
+      "UUID": "io.github.diogo.ai-usage.copilot-premium-requests",
+      "Icon": "assets/copilot",
+      "Tooltip": "Shows this month's personal Copilot premium request usage. Press to switch display; when setup is required, press to open GitHub token settings.",
+      "PropertyInspectorPath": "ui/copilot.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "assets/copilot",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "Name": "Copilot Inline Suggestions",
+      "UUID": "io.github.diogo.ai-usage.copilot-inline",
+      "Icon": "assets/copilot",
+      "Tooltip": "Press while setup is required to open GitHub token settings. Personal Copilot endpoints do not report inline suggestion usage.",
+      "PropertyInspectorPath": "ui/copilot.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "assets/copilot",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "Name": "Copilot Reset Countdown",
+      "UUID": "io.github.diogo.ai-usage.copilot-reset",
+      "Icon": "assets/copilot",
+      "Tooltip": "Shows the next monthly Copilot reset date and time. Press to toggle between 24-hour and 12-hour time.",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "assets/copilot",
+          "TitleAlignment": "middle"
+        }
+      ]
+    }
+  ]
+}

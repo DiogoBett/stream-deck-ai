@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		:root {
+			color-scheme: dark;
+			--canvas: #0d1117;
+			--surface: #161b22;
+			--border: #30363d;
+			--foreground: #e6edf3;
+			--muted: #8b949e;
+			--accent: #3fb950;
+		}
+		* { box-sizing: border-box; }
+		body {
+			background: var(--canvas);
+			color: var(--foreground);
+			font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			margin: 0;
+		}
+		main { max-width: 460px; padding: 16px; }
+		header { margin-bottom: 14px; }
+		.eyebrow {
+			color: var(--accent);
+			font-size: 11px;
+			font-weight: 600;
+			letter-spacing: .06em;
+			margin: 0 0 3px;
+			text-transform: uppercase;
+		}
+		h3 { font-size: 16px; line-height: 1.3; margin: 0; }
+		.card {
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 12px;
+		}
+		.intro { border-left: 3px solid var(--accent); margin: 0 0 12px; padding-left: 10px; }
+		label { display: block; font-weight: 600; margin: 12px 0 5px; }
+		input, select {
+			background: var(--canvas);
+			border: 1px solid #3d444d;
+			border-radius: 6px;
+			color: var(--foreground);
+			font: inherit;
+			min-height: 34px;
+			padding: 6px 9px;
+			width: 100%;
+		}
+		input:focus, select:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 2px rgb(63 185 80 / 25%);
+			outline: none;
+		}
+		button {
+			background: #238636;
+			border: 1px solid #2ea043;
+			border-radius: 6px;
+			color: #fff;
+			cursor: pointer;
+			font: inherit;
+			font-weight: 600;
+			margin-top: 14px;
+			min-height: 34px;
+			width: 100%;
+		}
+		button:hover { background: #2ea043; }
+		.note { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+		code { background: var(--canvas); border-radius: 4px; color: #79c0ff; padding: 1px 4px; }
+		#status { min-height: 18px; }
+	</style>
+</head>
+<body>
+	<main>
+		<header>
+			<p class="eyebrow">Stream Deck Plugin</p>
+			<h3>GitHub Copilot</h3>
+		</header>
+		<section class="card">
+			<p class="intro">Connect your personal account to track monthly Copilot usage.</p>
+			<p class="note">Use a fine-grained personal access token with the user <code>Plan: read</code> permission. The token is saved in this plugin's Stream Deck global settings on this computer. Free, Pro, Pro+, and Max Individual use the same metrics.</p>
+
+			<label for="username">GitHub username</label>
+			<input id="username" autocomplete="username">
+			<label for="pat">Personal access token</label>
+			<input id="pat" type="password" autocomplete="new-password">
+
+			<label for="plan">Personal Copilot plan</label>
+			<select id="plan">
+				<option value="free">Free</option>
+				<option value="pro">Pro</option>
+				<option value="pro_plus">Pro+</option>
+				<option value="max">Max</option>
+			</select>
+			<label for="limit">Monthly allowance (optional)</label>
+			<input id="limit" type="number" min="0" step="any" inputmode="decimal">
+			<p class="note">Pro AI Credits default to 1,500 if blank. Enter an allowance for Free, Pro+ or Max to show premium requests percentage. Press a usage key to switch between percentage and used/allowance.</p>
+			<button id="save" type="button">Save settings</button>
+			<p id="status" class="note" role="status"></p>
+		</section>
+	</main>
+
+	<script>
+		let socket;
+		let actionContext;
+
+		function connectElgatoStreamDeckSocket(port, propertyInspectorUuid, registerEvent, info, actionInfo) {
+			actionContext = JSON.parse(actionInfo).context;
+			socket = new WebSocket(`ws://127.0.0.1:${port}`);
+			socket.addEventListener("open", () => {
+				socket.send(JSON.stringify({ event: registerEvent, uuid: propertyInspectorUuid }));
+				socket.send(JSON.stringify({ event: "getSettings", context: actionContext }));
+				socket.send(JSON.stringify({ event: "getGlobalSettings", context: actionContext }));
+			});
+			socket.addEventListener("message", (event) => {
+				const message = JSON.parse(event.data);
+				if (message.event === "didReceiveSettings") {
+					const settings = message.payload.settings || {};
+					const plans = ["free", "pro", "pro_plus", "max"];
+					document.getElementById("plan").value = plans.includes(settings.plan) ? settings.plan : "free";
+					document.getElementById("limit").value = settings.limit ?? "";
+				}
+				if (message.event === "didReceiveGlobalSettings") {
+					const settings = message.payload.settings || {};
+					document.getElementById("username").value = settings.username || "";
+					document.getElementById("pat").value = settings.pat || "";
+				}
+			});
+		}
+
+		document.getElementById("save").addEventListener("click", () => {
+			const username = document.getElementById("username").value.trim();
+			const pat = document.getElementById("pat").value.trim();
+			const rawLimit = document.getElementById("limit").value;
+			const limit = rawLimit === "" ? undefined : Number(rawLimit);
+			const status = document.getElementById("status");
+
+			if (!username || !pat) {
+				status.textContent = "Enter your GitHub username and personal access token.";
+				return;
+			}
+			if (rawLimit !== "" && (!Number.isFinite(limit) || limit <= 0)) {
+				status.textContent = "The monthly allowance must be a positive number or blank.";
+				return;
+			}
+			if (!socket || socket.readyState !== WebSocket.OPEN) {
+				status.textContent = "Stream Deck is not connected yet. Try again.";
+				return;
+			}
+
+			const settings = {
+				plan: document.getElementById("plan").value,
+				...(limit === undefined ? {} : { limit })
+			};
+			socket.send(JSON.stringify({
+				event: "setGlobalSettings",
+				context: actionContext,
+				payload: { username, pat }
+			}));
+			socket.send(JSON.stringify({
+				event: "setSettings",
+				context: actionContext,
+				payload: settings
+			}));
+			status.textContent = "Settings saved. Press the usage key to refresh.";
+		});
+	</script>
+</body>
+</html>

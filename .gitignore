@@ -1,0 +1,4 @@
+node_modules/
+io.github.diogo.ai-usage.sdPlugin/bin/
+io.github.diogo.ai-usage.sdPlugin/logs/
+*.streamDeckPlugin
