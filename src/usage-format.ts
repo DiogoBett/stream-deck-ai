@@ -1,20 +1,10 @@
 import {
-	COPILOT_DISPLAY_MODES,
 	COPILOT_ERROR_MESSAGES,
 	COPILOT_FORMATTING,
-	COPILOT_PLANS,
 	COPILOT_TIME_FORMATS,
 	COPILOT_TITLE_TEXT,
 	COPILOT_USAGE_METRICS,
 } from "./constants.ts";
-
-export type CopilotSettings = {
-	plan?: CopilotPlan;
-	limit?: number;
-	displayMode?: CopilotDisplayMode;
-};
-
-export type CopilotPlan = (typeof COPILOT_PLANS)[keyof typeof COPILOT_PLANS];
 
 export type CopilotUsageMetric =
 	(typeof COPILOT_USAGE_METRICS)[keyof typeof COPILOT_USAGE_METRICS];
@@ -23,9 +13,6 @@ export type GitHubCredentials = {
 	username?: string;
 	pat?: string;
 };
-
-export type CopilotDisplayMode =
-	(typeof COPILOT_DISPLAY_MODES)[keyof typeof COPILOT_DISPLAY_MODES];
 
 export type CopilotTimeFormat =
 	(typeof COPILOT_TIME_FORMATS)[keyof typeof COPILOT_TIME_FORMATS];
@@ -67,22 +54,9 @@ export function sumCopilotUsage(items: readonly CopilotUsageItem[]): number {
 
 export function formatCopilotUsageTitle(
 	used: number,
-	limit: number | undefined,
-	mode: CopilotDisplayMode,
 	label: string,
 ): string {
-	const formattedUsed = formatNumber(used);
-	if (mode === COPILOT_DISPLAY_MODES.PERCENTAGE) {
-		if (!isValidCreditLimit(limit)) {
-			return `${label}${COPILOT_TITLE_TEXT.LINE_BREAK}${COPILOT_TITLE_TEXT.SET_LIMIT}`;
-		}
-
-		return `${label}${COPILOT_TITLE_TEXT.LINE_BREAK}${formatNumber((used / limit) * 100)}%`;
-	}
-
-	return isValidCreditLimit(limit)
-		? `${label}${COPILOT_TITLE_TEXT.LINE_BREAK}${formattedUsed}/${formatNumber(limit)}`
-		: `${label}${COPILOT_TITLE_TEXT.LINE_BREAK}${formattedUsed}${COPILOT_TITLE_TEXT.USED_SUFFIX}`;
+	return `${label}${COPILOT_TITLE_TEXT.LINE_BREAK}${formatNumber(used)}${COPILOT_TITLE_TEXT.USED_SUFFIX}`;
 }
 
 export function formatCopilotResetTitle(

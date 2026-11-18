@@ -31,7 +31,7 @@
       "Name": "Copilot AI Credits",
       "UUID": "io.github.diogo.ai-usage.copilot-credits",
       "Icon": "assets/copilot",
-      "Tooltip": "Shows this month's personal Copilot AI credit usage. Press to switch display; when setup is required, press to open GitHub token settings.",
+      "Tooltip": "Shows this month's personal Copilot AI credit usage. Press to refresh; when setup is required, press to open GitHub token settings.",
       "PropertyInspectorPath": "ui/copilot.html",
       "Controllers": ["Keypad"],
       "States": [
@@ -45,7 +45,7 @@
       "Name": "Copilot Premium Requests",
       "UUID": "io.github.diogo.ai-usage.copilot-premium-requests",
       "Icon": "assets/copilot",
-      "Tooltip": "Shows this month's personal Copilot premium request usage. Press to switch display; when setup is required, press to open GitHub token settings.",
+      "Tooltip": "Shows this month's personal Copilot premium request usage. Press to refresh; when setup is required, press to open GitHub token settings.",
       "PropertyInspectorPath": "ui/copilot.html",
       "Controllers": ["Keypad"],
       "States": [

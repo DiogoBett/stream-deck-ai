@@ -1,18 +1,6 @@
-export const COPILOT_PLANS = {
-	FREE: "free",
-	PRO: "pro",
-	PRO_PLUS: "pro_plus",
-	MAX: "max",
-} as const;
-
 export const COPILOT_USAGE_METRICS = {
 	AI_CREDIT: "ai_credit",
 	PREMIUM_REQUEST: "premium_request",
-} as const;
-
-export const COPILOT_DISPLAY_MODES = {
-	PERCENTAGE: "percentage",
-	VALUES: "values",
 } as const;
 
 export const COPILOT_TIME_FORMATS = {
@@ -20,7 +8,6 @@ export const COPILOT_TIME_FORMATS = {
 	TWENTY_FOUR_HOUR: "24h",
 } as const;
 
-export const COPILOT_PRO_MONTHLY_CREDIT_LIMIT = 1500;
 export const COPILOT_RESET_REFRESH_INTERVAL_MS = 60_000;
 
 export const STREAM_DECK_ACTION_UUIDS = {
@@ -61,7 +48,6 @@ export const COPILOT_TITLE_TEXT = {
 	CHECK_SETUP: "Check setup",
 	INLINE_UNAVAILABLE: "Inline\nUnavailable",
 	INLINE_CHECK_SETUP: "Inline\nCheck setup",
-	SET_LIMIT: "Set limit",
 	USED_SUFFIX: " used",
 	RESETS_ON: "Resets on:",
 } as const;

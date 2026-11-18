@@ -87,16 +87,7 @@
 			<label for="pat">Personal access token</label>
 			<input id="pat" type="password" autocomplete="new-password">
 
-			<label for="plan">Personal Copilot plan</label>
-			<select id="plan">
-				<option value="free">Free</option>
-				<option value="pro">Pro</option>
-				<option value="pro_plus">Pro+</option>
-				<option value="max">Max</option>
-			</select>
-			<label for="limit">Monthly allowance (optional)</label>
-			<input id="limit" type="number" min="0" step="any" inputmode="decimal">
-			<p class="note">Pro AI Credits default to 1,500 if blank. Enter an allowance for Free, Pro+ or Max to show premium requests percentage. Press a usage key to switch between percentage and used/allowance.</p>
+			<p class="note">GitHub's personal billing endpoints return usage totals, not plan allowances. This plugin displays usage only.</p>
 			<button id="save" type="button">Save settings</button>
 			<p id="status" class="note" role="status"></p>
 		</section>
@@ -116,12 +107,6 @@
 			});
 			socket.addEventListener("message", (event) => {
 				const message = JSON.parse(event.data);
-				if (message.event === "didReceiveSettings") {
-					const settings = message.payload.settings || {};
-					const plans = ["free", "pro", "pro_plus", "max"];
-					document.getElementById("plan").value = plans.includes(settings.plan) ? settings.plan : "free";
-					document.getElementById("limit").value = settings.limit ?? "";
-				}
 				if (message.event === "didReceiveGlobalSettings") {
 					const settings = message.payload.settings || {};
 					document.getElementById("username").value = settings.username || "";
@@ -133,16 +118,10 @@
 		document.getElementById("save").addEventListener("click", () => {
 			const username = document.getElementById("username").value.trim();
 			const pat = document.getElementById("pat").value.trim();
-			const rawLimit = document.getElementById("limit").value;
-			const limit = rawLimit === "" ? undefined : Number(rawLimit);
 			const status = document.getElementById("status");
 
 			if (!username || !pat) {
 				status.textContent = "Enter your GitHub username and personal access token.";
-				return;
-			}
-			if (rawLimit !== "" && (!Number.isFinite(limit) || limit <= 0)) {
-				status.textContent = "The monthly allowance must be a positive number or blank.";
 				return;
 			}
 			if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -150,21 +129,12 @@
 				return;
 			}
 
-			const settings = {
-				plan: document.getElementById("plan").value,
-				...(limit === undefined ? {} : { limit })
-			};
 			socket.send(JSON.stringify({
 				event: "setGlobalSettings",
 				context: actionContext,
 				payload: { username, pat }
 			}));
-			socket.send(JSON.stringify({
-				event: "setSettings",
-				context: actionContext,
-				payload: settings
-			}));
-			status.textContent = "Settings saved. Press the usage key to refresh.";
+			status.textContent = "Settings saved. Usage keys will refresh automatically.";
 		});
 	</script>
 </body>

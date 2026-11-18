@@ -30,11 +30,9 @@ test("rejects usage quantities with inconsistent units", () => {
 	);
 });
 
-test("formats usage as percentage, used/allowance, or usage-only", () => {
-	assert.equal(formatCopilotUsageTitle(375, 1500, "percentage", "Credits"), "Credits\n25%");
-	assert.equal(formatCopilotUsageTitle(375, 1500, "values", "Credits"), "Credits\n375/1,500");
-	assert.equal(formatCopilotUsageTitle(375, undefined, "values", "Requests"), "Requests\n375 used");
-	assert.equal(formatCopilotUsageTitle(375, undefined, "percentage", "Requests"), "Requests\nSet limit");
+test("formats the current usage total without an allowance", () => {
+	assert.equal(formatCopilotUsageTitle(375, "Credits"), "Credits\n375 used");
+	assert.equal(formatCopilotUsageTitle(0, "Requests"), "Requests\n0 used");
 });
 
 test("requires a nonblank username and token before credentials are configured", () => {

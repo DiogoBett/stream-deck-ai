@@ -9,10 +9,7 @@ import streamDeck, {
 
 import {
 	COPILOT_ACTION_LABELS,
-	COPILOT_DISPLAY_MODES,
 	COPILOT_ERROR_MESSAGES,
-	COPILOT_PLANS,
-	COPILOT_PRO_MONTHLY_CREDIT_LIMIT,
 	COPILOT_RESET_REFRESH_INTERVAL_MS,
 	COPILOT_TIME_FORMATS,
 	COPILOT_TITLE_TEXT,
@@ -25,50 +22,57 @@ import {
 	formatCopilotUsageTitle,
 	formatCopilotResetTitle,
 	getConfiguredGitHubCredentials,
-	isValidCreditLimit,
-	type CopilotDisplayMode,
 	type CopilotResetSettings,
-	type CopilotSettings,
 	type CopilotTimeFormat,
 	type CopilotUsageMetric,
 	type GitHubCredentials,
 } from "../usage-format";
 
-abstract class CopilotUsageActionBase extends SingletonAction<CopilotSettings> {
+abstract class CopilotUsageActionBase extends SingletonAction {
 	protected abstract readonly label: string;
 	protected abstract readonly metric: CopilotUsageMetric;
+	private readonly visible = new Map<string, KeyDownEvent["action"]>();
 
-	override async onWillAppear(ev: WillAppearEvent<CopilotSettings>): Promise<void> {
+	constructor() {
+		super();
+		streamDeck.settings.onDidReceiveGlobalSettings<GitHubCredentials>(() => {
+			for (const actionInstance of this.visible.values()) {
+				this.refresh(actionInstance).catch((error: unknown) => {
+					streamDeck.logger.error(
+						COPILOT_ERROR_MESSAGES.couldNotLoadUsage(this.label),
+						error,
+					);
+				});
+			}
+		});
+	}
+
+	override async onWillAppear(ev: WillAppearEvent): Promise<void> {
 		if (ev.action.isKey()) {
-			await this.refresh(ev.action, ev.payload.settings);
+			this.visible.set(ev.action.id, ev.action);
+			await this.refresh(ev.action);
 		}
 	}
 
-	override async onKeyDown(ev: KeyDownEvent<CopilotSettings>): Promise<void> {
+	override async onKeyDown(ev: KeyDownEvent): Promise<void> {
 		if (await openSetupPageIfRequired((title) => ev.action.setTitle(title))) {
 			return;
 		}
 
-		const settings = ev.payload.settings;
-		const nextMode: CopilotDisplayMode =
-			getDisplayMode(settings, this.metric) === COPILOT_DISPLAY_MODES.PERCENTAGE
-				? COPILOT_DISPLAY_MODES.VALUES
-				: COPILOT_DISPLAY_MODES.PERCENTAGE;
-		const nextSettings = { ...settings, displayMode: nextMode };
-		await ev.action.setSettings(nextSettings);
-		await this.refresh(ev.action, nextSettings);
+		await this.refresh(ev.action);
 	}
 
-	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<CopilotSettings>): Promise<void> {
+	override async onDidReceiveSettings(ev: DidReceiveSettingsEvent): Promise<void> {
 		if (ev.action.isKey()) {
-			await this.refresh(ev.action, ev.payload.settings);
+			await this.refresh(ev.action);
 		}
 	}
 
-	private async refresh(
-		actionInstance: KeyDownEvent<CopilotSettings>["action"],
-		settings: CopilotSettings,
-	): Promise<void> {
+	override onWillDisappear(ev: WillDisappearEvent): void {
+		this.visible.delete(ev.action.id);
+	}
+
+	private async refresh(actionInstance: KeyDownEvent["action"]): Promise<void> {
 		try {
 			const credentials = await streamDeck.settings.getGlobalSettings<GitHubCredentials>();
 			if (!getConfiguredGitHubCredentials(credentials)) {
@@ -81,12 +85,7 @@ abstract class CopilotUsageActionBase extends SingletonAction<CopilotSettings> {
 			);
 			const used = await fetchPersonalCopilotUsage(credentials, this.metric);
 			await actionInstance.setTitle(
-				formatCopilotUsageTitle(
-					used,
-					getLimit(settings, this.metric),
-					getDisplayMode(settings, this.metric),
-					this.label,
-				),
+				formatCopilotUsageTitle(used, this.label),
 			);
 		} catch (error) {
 			streamDeck.logger.error(COPILOT_ERROR_MESSAGES.couldNotLoadUsage(this.label), error);
@@ -232,25 +231,3 @@ export class CopilotResetDateAction extends SingletonAction<CopilotResetSettings
 	}
 }
 
-function getDisplayMode(settings: CopilotSettings, metric: CopilotUsageMetric): CopilotDisplayMode {
-	if (
-		settings.displayMode === COPILOT_DISPLAY_MODES.PERCENTAGE ||
-		settings.displayMode === COPILOT_DISPLAY_MODES.VALUES
-	) {
-		return settings.displayMode;
-	}
-
-	return isValidCreditLimit(getLimit(settings, metric))
-		? COPILOT_DISPLAY_MODES.PERCENTAGE
-		: COPILOT_DISPLAY_MODES.VALUES;
-}
-
-function getLimit(settings: CopilotSettings, metric: CopilotUsageMetric): number | undefined {
-	if (isValidCreditLimit(settings.limit)) {
-		return settings.limit;
-	}
-
-	return settings.plan === COPILOT_PLANS.PRO && metric === COPILOT_USAGE_METRICS.AI_CREDIT
-		? COPILOT_PRO_MONTHLY_CREDIT_LIMIT
-		: undefined;
-}
